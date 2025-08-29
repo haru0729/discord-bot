@@ -31,6 +31,11 @@ const commands = [
         .addSubcommand(sub =>
             sub.setName("record")
                .setDescription("ガチャ結果を表示する")
+               .addIntegerOption(opt =>
+                   opt.setName("count")
+                      .setDescription("引く回数（最大10）")
+                      .setRequired(false)
+               )
         )
 ].map(cmd => cmd.toJSON());
 
@@ -78,28 +83,30 @@ client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
     if (interaction.commandName === "gacha" && interaction.options.getSubcommand() === "record") {
-        const rollIndex = Math.floor(Math.random() * recordTable.length);
-        const result = recordTable[rollIndex];
-        const roll = result.id;
-        const roll2 = Math.floor(Math.random() * 2); 
+        // 回数を取得（デフォルト 1、最大 10）
+        let count = interaction.options.getInteger("count") || 1;
+        if (count > 100) count = 100;
 
-        console.log(`楽曲ID ${roll} `);
+        let results = [];
 
-        if(roll2){
-            if (result) {
-                await interaction.reply(
-                    `今日のレコードは **『${result.label}』**だよ！`
-                );
+        for (let i = 0; i < count; i++) {
+            const rollIndex = Math.floor(Math.random() * recordTable.length);
+            const result = recordTable[rollIndex];
+            const roll2 = Math.floor(Math.random() * 2);
+
+            if (roll2 && result) {
+                results.push(`💿『${result.label}』`);
+            } else {
+                results.push(`🗑️『余ったレコード』`);
             }
         }
-        else{
-            await interaction.reply(
-                `今日のレコードは **『余ったレコード』**だよ！`
-            );
-        }
+
+        await interaction.reply({
+            content: `レコードガチャ (${count}回)の結果は\n${results.join("\n")}`,
+            ephemeral: false // 公開で良ければ false, 個人のみなら true
+        });
     }
 });
-
 
 // ---------------------------
 // 🎯 複数リアクションロール設定

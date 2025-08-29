@@ -700,7 +700,7 @@ export const recordTable = [
   },
   {
     id: "175",
-    label: "ドーナツホール 2024*7"
+    label: "ドーナツホール 2024"
   },
   {
     id: "176",
@@ -2285,5 +2285,13 @@ export const recordTable = [
   {
     id: "571",
     label: "SAN値直葬"
+  },
+  {
+    id: "572",
+    label: "飾って"
+  },
+  {
+    id: "573",
+    label: "ラストラス"
   }
 ]
