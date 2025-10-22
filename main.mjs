@@ -13,7 +13,7 @@ dotenv.config();
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,             // サーバー情報取得
-        GatewayIntentBits.GuildMessages,      // メッセージ取得
+        GatewayIntentBits.GuildMessages,       // メッセージ取得
         GatewayIntentBits.MessageContent,     // メッセージ内容取得
         GatewayIntentBits.GuildMembers,       // メンバー情報取得
         GatewayIntentBits.GuildMessageReactions // リアクション取得
