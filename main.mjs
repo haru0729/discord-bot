@@ -15,7 +15,7 @@ const client = new Client({
         GatewayIntentBits.Guilds,             // サーバー情報取得
         GatewayIntentBits.GuildMessages,       // メッセージ取得
         GatewayIntentBits.MessageContent,     // メッセージ内容取得
-        GatewayIntentBits.GuildMembers,       // メンバー情報取得
+        GatewayIntentBits.GuildMembers,        // メンバー情報取得
         GatewayIntentBits.GuildMessageReactions // リアクション取得
     ],
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
@@ -30,12 +30,12 @@ const commands = [
         .setDescription("ガチャを回す")
         .addSubcommand(sub =>
             sub.setName("record")
-               .setDescription("ガチャ結果を表示する")
-               .addIntegerOption(opt =>
-                   opt.setName("count")
-                      .setDescription("引く回数（最大10）")
-                      .setRequired(false)
-               )
+                 .setDescription("ガチャ結果を表示する")
+                 .addIntegerOption(opt =>
+                     opt.setName("count")
+                       .setDescription("引く回数")
+                       .setRequired(false)
+                 )
         )
 ].map(cmd => cmd.toJSON());
 
@@ -45,7 +45,7 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
     try {
         console.log("⏳ スラッシュコマンドを登録中...");
         await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.GUILD_ID),
+            Routes.applicationCommands(process.env.CLIENT_ID),
             { body: commands }
         );
         console.log("✅ スラッシュコマンドを登録しました！");
@@ -53,60 +53,6 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
         console.error("❌ コマンド登録エラー:", error);
     }
 })();
-
-
-// Botが起動完了したときの処理
-const NOTIFY_CHANNEL_ID = "1409423000897327226"
-client.once('clientReady', async () => {
-    console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
-    console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
-
-    const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
-    if (channel) {
-        channel.send(`✅ ${client.user.tag} がオンラインになりました！`);
-    }
-});
-
-// メッセージが送信されたときの処理
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
-    if (message.content.toLowerCase() === 'hello') {
-        message.reply('りんりりーん！お届け物です！');
-        console.log(`📝 ${message.author.tag} が hello コマンドを使用`);
-    }
-});
-
-// ---------------------------
-// ガチャコマンド
-// ---------------------------
-client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-
-    if (interaction.commandName === "gacha" && interaction.options.getSubcommand() === "record") {
-        // 回数を取得（デフォルト 1、最大 10）
-        let count = interaction.options.getInteger("count") || 1;
-        if (count > 100) count = 100;
-
-        let results = [];
-
-        for (let i = 0; i < count; i++) {
-            const rollIndex = Math.floor(Math.random() * recordTable.length);
-            const result = recordTable[rollIndex];
-            const roll2 = Math.floor(Math.random() * 2);
-
-            if (roll2 && result) {
-                results.push(`💿『${result.label}』`);
-            } else {
-                results.push(`🗑️『余ったレコード』`);
-            }
-        }
-
-        await interaction.reply({
-            content: `レコードガチャ (${count}回)の結果は\n${results.join("\n")}`,
-            ephemeral: false // 公開で良ければ false, 個人のみなら true
-        });
-    }
-});
 
 // ---------------------------
 // 🎯 複数リアクションロール設定
@@ -118,8 +64,88 @@ const reactionRoles = {
 
 const config = {
     channelId: "1409418758308757595", // チャンネルID
-    messageId: "1409418982389317683"  // メッセージID
+    messageId: "1409418982389317683"   // メッセージID
 };
+
+const config_event = {
+    channelId: "1430513967884931135", // チャンネルID
+    messageId: "1430530210721431564"  // メッセージID
+};
+
+
+// Botが起動完了したときの処理
+const NOTIFY_CHANNEL_ID = "1409423000897327226"
+client.once('clientReady', async () => {
+    console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
+    console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
+
+    // 起動通知
+    try {
+        const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
+        if (channel) {
+            await channel.send(`✅ ${client.user.tag} がオンラインになりました！`);
+        }
+    } catch (err) {
+        console.warn("⚠️ 起動通知の送信に失敗:", err);
+    }
+});
+
+
+// メッセージが送信されたときの処理
+client.on('messageCreate', (message) => {
+    if (message.author.bot) return;
+    if (message.content.toLowerCase() === 'hello') {
+        message.reply('りんりりーん！お届け物です！！');
+        console.log(`📝 ${message.author.tag} が hello コマンドを使用`);
+    }
+});
+
+// ---------------------------
+// ガチャコマンド
+// ---------------------------
+client.on("interactionCreate", async (interaction) => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "gacha" && interaction.options.getSubcommand() === "record") {
+        
+        // 1. 応答を「保留」する (これで1回目の応答)
+        await interaction.deferReply();
+
+        // 回数を取得（デフォルト 1）
+        let count = interaction.options.getInteger("count") || 1;
+        if (count > 100) count = 100;
+
+        let trashRate = interaction.options.getInteger("rate");
+        if (trashRate === null) {
+            trashRate = 50;
+        }
+
+        let results = [];
+
+        for (let i = 0; i < count; i++) {
+            const rollIndex = Math.floor(Math.random() * recordTable.length);
+            const result = recordTable[rollIndex];
+            const chance = Math.floor(Math.random() * 100);
+            
+            if (chance < trashRate) {
+                results.push(`🗑️『余ったレコード』`);
+            } else {
+                // 当たり判定かつ、resultが存在する場合
+                if (result) {
+                    results.push(`💿『${result.label}』`);
+                } else {
+                    // 万が一 recordTable が空などの場合
+                    results.push(`🗑️『余ったレコード』`);
+                }
+            }
+        }
+
+        // 2. 応答を「編集」する (reply ではなく editReply)
+        await interaction.editReply({
+            content: `レコードガチャ (${trashRate}%${count}回)の結果は\n${results.join("\n")}`,
+        });
+    }
+});
 
 // ---------------------------
 // リアクション追加
@@ -128,6 +154,7 @@ client.on('messageReactionAdd', async (reaction, user) => {
     if (user.bot) return;
     if (reaction.partial) await reaction.fetch();
 
+    // config 用のロール付与
     if (reaction.message.id === config.messageId) {
         const roleId = reactionRoles[reaction.emoji.name];
         if (!roleId) return;
@@ -137,13 +164,21 @@ client.on('messageReactionAdd', async (reaction, user) => {
 
         if (!member.roles.cache.has(roleId)) {
             await member.roles.add(roleId);
-            console.log(`✅ ${member.user.tag} にロール(${roleId})を付与しました`);
+            console.log(`✅ [config] ${member.user.tag} にロール(${roleId})を付与しました`);
+        }
+    }
 
-            try {
-                await user.send(`✅ あなたに <@&${roleId}> ロールを付与しました！`);
-            } catch (err) {
-                console.error(`❌ ${user.tag} にDMを送信できませんでした`);
-            }
+    // config_event 用のロール付与
+    if (reaction.message.id === config_event.messageId) {
+        const roleId = reactionRoles_event[reaction.emoji.name];
+        if (!roleId) return;
+
+        const guild = reaction.message.guild;
+        const member = await guild.members.fetch(user.id);
+
+        if (!member.roles.cache.has(roleId)) {
+            await member.roles.add(roleId);
+            console.log(`✅ [config_event] ${member.user.tag} にロール(${roleId})を付与しました`);
         }
     }
 });
@@ -155,6 +190,7 @@ client.on('messageReactionRemove', async (reaction, user) => {
     if (user.bot) return;
     if (reaction.partial) await reaction.fetch();
 
+    // config 用のロール削除
     if (reaction.message.id === config.messageId) {
         const roleId = reactionRoles[reaction.emoji.name];
         if (!roleId) return;
@@ -164,13 +200,21 @@ client.on('messageReactionRemove', async (reaction, user) => {
 
         if (member.roles.cache.has(roleId)) {
             await member.roles.remove(roleId);
-            console.log(`🗑️ ${member.user.tag} からロール(${roleId})を削除しました`);
+            console.log(`🗑️ [config] ${member.user.tag} からロール(${roleId})を削除しました`);
+        }
+    }
+    
+    // config_event 用のロール削除（もし削除も連動させたい場合）
+    if (reaction.message.id === config_event.messageId) {
+        const roleId = reactionRoles_event[reaction.emoji.name];
+        if (!roleId) return;
 
-            try {
-                await user.send(`🗑️ あなたから <@&${roleId}> ロールを削除しました！`);
-            } catch (err) {
-                console.error(`❌ ${user.tag} にDMを送信できませんでした`);
-            }
+        const guild = reaction.message.guild;
+        const member = await guild.members.fetch(user.id);
+
+        if (member.roles.cache.has(roleId)) {
+            await member.roles.remove(roleId);
+            console.log(`🗑️ [config_event] ${member.user.tag} からロール(${roleId})を削除しました`);
         }
     }
 });
