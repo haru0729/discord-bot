@@ -36,6 +36,13 @@ const commands = [
                        .setDescription("引く回数")
                        .setRequired(false)
                  )
+                 .addIntegerOption(opt => 
+                    opt.setName("rate")
+                        .setDescription("余ったレコードが出る確率(%) デフォルト50")
+                        .setRequired(false)
+                        .setMinValue(0)
+                        .setMaxValue(100)
+                )
         )
 ].map(cmd => cmd.toJSON());
 
@@ -267,3 +274,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
 });
+
+// git add .
+//git commit -m "コードを修正"
+// git push origin main
