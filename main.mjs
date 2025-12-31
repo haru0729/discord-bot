@@ -38,7 +38,7 @@ const commands = [
                  )
                  .addIntegerOption(opt => 
                     opt.setName("rate")
-                        .setDescription("余ったレコードが出る確率(%) デフォルト50")
+                        .setDescription("レコード排出率(%)")
                         .setRequired(false)
                         .setMinValue(0)
                         .setMaxValue(100)
@@ -134,7 +134,7 @@ client.on("interactionCreate", async (interaction) => {
             const result = recordTable[rollIndex];
             const chance = Math.floor(Math.random() * 100);
             
-            if (chance < trashRate) {
+            if (chance > trashRate) {
                 results.push(`🗑️『余ったレコード』`);
             } else {
                 // 当たり判定かつ、resultが存在する場合
