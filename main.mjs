@@ -253,6 +253,10 @@ if (!process.env.DISCORD_TOKEN) {
 }
 
 console.log('🔄 Discord に接続中...');
+
+// ログインの直前に追加
+console.log("トークンの確認:", process.env.DISCORD_TOKEN ? "設定されています (OK)" : "設定されていません (NG)");
+
 client.login(process.env.DISCORD_TOKEN)
     .catch(error => {
         console.error('❌ ログインに失敗しました:', error);
@@ -276,5 +280,5 @@ app.listen(port, () => {
 });
 
 // git add .
-//git commit -m "コードを修正"
+// git commit -m "コードを修正"
 // git push origin main
