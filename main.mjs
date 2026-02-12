@@ -21,6 +21,10 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
+// ★これを追加してください（デバッグ用）
+client.on("debug", (info) => console.log(`[DEBUG] ${info}`));
+client.on("warn", (info) => console.log(`[WARN] ${info}`));
+
 // ---------------------------
 // スラッシュコマンド登録
 // ---------------------------
