@@ -2477,5 +2477,77 @@ export const recordTable = [
   {
     id: "622",
     label: "鎖の少女-Re Alive-"
+  },
+  {
+    id: "623",
+    label: "Internet Junkie"
+  },
+  {
+    id: "624",
+    label: "幸福刑"
+  },
+  {
+    id: "625",
+    label: "透過する温度"
+  },
+  {
+    id: "626",
+    label: "好き！雪！本気マジック"
+  },
+  {
+    id: "627",
+    label: "Snow Fairy Story"
+  },
+  {
+    id: "628",
+    label: "雪がとける前に"
+  },
+  {
+    id: "629",
+    label: "スターナイトスノウ"
+  },
+  {
+    id: "630",
+    label: "四角い地球を丸くする"
+  },
+  {
+    id: "631",
+    label: "アイ"
+  },
+  {
+    id: "632",
+    label: "ぽかぽかの星"
+  },
+  {
+    id: "633",
+    label: "Fondant Step"
+  },
+  {
+    id: "634",
+    label: "SHIAWASE FOR YOU!"
+  },
+  {
+    id: "635",
+    label: "アリア"
+  },
+  {
+    id: "636",
+    label: "幕を下ろそう、パレードへ"
+  },
+  {
+    id: "637",
+    label: "Ribbon"
+  },
+  {
+    id: "638",
+    label: "ハオ"
+  },
+  {
+    id: "639",
+    label: "このまんまでいこう"
+  },
+  {
+    id: "640",
+    label: "とびだせ！わんだぴょい"
   }
 ]
