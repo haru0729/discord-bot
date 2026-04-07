@@ -2549,5 +2549,73 @@ export const recordTable = [
   {
     id: "640",
     label: "とびだせ！わんだぴょい"
+  },
+  {
+    id: "641",
+    label: "erase or zero"
+  },
+  {
+    id: "642",
+    label: "About me"
+  },
+  {
+    id: "643",
+    label: "ラムネ"
+  },
+  {
+    id: "644",
+    label: "Catch the Wave"
+  },
+  {
+    id: "645",
+    label: "カラフルファンデーション"
+  },
+  {
+    id: "646",
+    label: "バイオレンストリガー"
+  },
+  {
+    id: "647",
+    label: "ラヴィ"
+  },
+  {
+    id: "648",
+    label: "アルカリレットウセイ"
+  },
+  {
+    id: "649",
+    label: "天藍のアイスヘヴン"
+  },
+  {
+    id: "650",
+    label: "告白"
+  },
+  {
+    id: "651",
+    label: "傀儡のうつつ"
+  },
+  {
+    id: "652",
+    label: "ダイダイダイダイダイキライ"
+  },
+  {
+    id: "653",
+    label: "ワンダーラスト"
+  },
+  {
+    id: "654",
+    label: "あいしていたのに"
+  },
+  {
+    id: "655",
+    label: "フロイライン＝オジョウサマ"
+  },
+  {
+    id: "656",
+    label: "Nyanyanyanyanyanyanya!"
+  },
+  {
+    id: "657",
+    label: "T氏の話を信じるな"
   }
 ]
