@@ -2617,5 +2617,13 @@ export const recordTable = [
   {
     id: "657",
     label: "T氏の話を信じるな"
+  },
+  {
+    id: "658",
+    label: "ヘッジホッグ"
+  },
+  {
+    id: "659",
+    label: "CRASH THE PARTY"
   }
 ]
