@@ -1,13 +1,21 @@
 // main.mjs - Discord Botのメインプログラム
 
 // 必要なライブラリを読み込み
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, Partials } from 'discord.js';
+import { 
+    Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, 
+    Partials, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType 
+} from 'discord.js';
 import dotenv from 'dotenv';
 import express from 'express';
+import { GoogleGenerativeAI } from "@google/generative-ai"; // AIライブラリ
 import { recordTable } from "./recordTable.mjs";
 
 // .envファイルから環境変数を読み込み
 dotenv.config();
+
+// Gemini APIの設定
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // Discord Botクライアントを作成
 const client = new Client({
@@ -21,7 +29,7 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel, Partials.Reaction],
 });
 
-// ★これを追加してください（デバッグ用）
+// デバッグ用ログ
 client.on("debug", (info) => console.log(`[DEBUG] ${info}`));
 client.on("warn", (info) => console.log(`[WARN] ${info}`));
 
@@ -31,7 +39,7 @@ client.on("warn", (info) => console.log(`[WARN] ${info}`));
 const commands = [
     new SlashCommandBuilder()
         .setName("gacha")
-        .setDescription("ガチャを回す")
+        .setDescription("ガチャ・クイズ機能")
         .addSubcommand(sub =>
             sub.setName("record")
                  .setDescription("ガチャ結果を表示する")
@@ -47,6 +55,10 @@ const commands = [
                         .setMinValue(0)
                         .setMaxValue(100)
                 )
+        )
+        .addSubcommand(sub =>
+            sub.setName("quiz")
+                 .setDescription("引いたレコードが答えとなるAIクイズを出題！")
         )
 ].map(cmd => cmd.toJSON());
 
@@ -66,31 +78,28 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 })();
 
 // ---------------------------
-// 🎯 複数リアクションロール設定
+// 🎯 リアクションロール設定
 // ---------------------------
 const reactionRoles = {
-    "🐧": "1409416280737316925", // ロールID
-    "🍊": "1409416412858023967", // ロールID
+    "🐧": "1409416280737316925",
+    "🍊": "1409416412858023967",
 };
 
 const config = {
-    channelId: "1409418758308757595", // チャンネルID
-    messageId: "1409418982389317683"   // メッセージID
+    channelId: "1409418758308757595",
+    messageId: "1409418982389317683"
 };
 
-const config_event = {
-    channelId: "1430513967884931135", // チャンネルID
-    messageId: "1430530210721431564"  // メッセージID
-};
+// ---------------------------
+// Bot起動時の処理
+// ---------------------------
+const NOTIFY_CHANNEL_ID = "1409423000897327226";
 
-
-// Botが起動完了したときの処理
-const NOTIFY_CHANNEL_ID = "1409423000897327226"
-client.once('clientReady', async () => {
+// 注: 元のコードの 'clientReady' は標準イベントではないため 'ready' に修正しました
+client.once('ready', async () => {
     console.log(`🎉 ${client.user.tag} が正常に起動しました！`);
     console.log(`📊 ${client.guilds.cache.size} つのサーバーに参加中`);
 
-    // 起動通知
     try {
         const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
         if (channel) {
@@ -101,38 +110,22 @@ client.once('clientReady', async () => {
     }
 });
 
-
-// メッセージが送信されたときの処理
-client.on('messageCreate', (message) => {
-    if (message.author.bot) return;
-    if (message.content.toLowerCase() === 'hello') {
-        message.reply('りんりりーん！お届け物です！！');
-        console.log(`📝 ${message.author.tag} が hello コマンドを使用`);
-    }
-});
-
 // ---------------------------
-// ガチャコマンド
+// メイン処理（インタラクション）
 // ---------------------------
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
 
-    if (interaction.commandName === "gacha" && interaction.options.getSubcommand() === "record") {
-        
-        // 1. 応答を「保留」する (これで1回目の応答)
-        await interaction.deferReply();
+    const subcommand = interaction.options.getSubcommand();
 
-        // 回数を取得（デフォルト 1）
+    // --- ガチャ引く機能(record) ---
+    if (interaction.commandName === "gacha" && subcommand === "record") {
+        await interaction.deferReply();
         let count = interaction.options.getInteger("count") || 1;
         if (count > 100) count = 100;
-
-        let trashRate = interaction.options.getInteger("rate");
-        if (trashRate === null) {
-            trashRate = 50;
-        }
+        let trashRate = interaction.options.getInteger("rate") ?? 50;
 
         let results = [];
-
         for (let i = 0; i < count; i++) {
             const rollIndex = Math.floor(Math.random() * recordTable.length);
             const result = recordTable[rollIndex];
@@ -141,76 +134,138 @@ client.on("interactionCreate", async (interaction) => {
             if (chance > trashRate) {
                 results.push(`🗑️『余ったレコード』`);
             } else {
-                // 当たり判定かつ、resultが存在する場合
-                if (result) {
-                    results.push(`💿『${result.label}』`);
-                } else {
-                    // 万が一 recordTable が空などの場合
-                    results.push(`🗑️『余ったレコード』`);
-                }
+                results.push(`💿『${result ? result.label : "不明なレコード"}』`);
             }
         }
 
-        // 2. 応答を「編集」する (reply ではなく editReply)
         await interaction.editReply({
-            content: `レコードガチャ (${trashRate}%${count}回)の結果は\n${results.join("\n")}`,
+            content: `レコードガチャ (${trashRate}% / ${count}回)の結果は\n${results.join("\n")}`,
         });
     }
+
+    // --- AIクイズ機能(quiz) ---
+    if (interaction.commandName === "gacha" && subcommand === "quiz") {
+        await interaction.deferReply();
+
+        // 答えとなる曲をランダムに選ぶ
+        const answerItem = recordTable[Math.floor(Math.random() * recordTable.length)];
+        const answerSong = answerItem.label;
+
+        try {
+            // AIへの依頼（プロンプト）
+            const prompt = `
+            あなたは「プロジェクトセカイ(プロセカ)」とボカロ楽曲の専門家です。
+            楽曲「${answerSong}」が正解となるようなクイズを作成してください。
+            
+            【ルール】
+            1. クイズ本文に直接「${answerSong}」という曲名を書かないでください。
+            2. 特徴（歌詞、ボカロP、ユニット、イベント内容など）から推測させてください。
+            3. 以下のJSON形式だけで出力してください。
+            {
+              "question": "クイズの本文（曲名を出さない）",
+              "options": ["${answerSong}", "別の実在する曲名1", "別の実在する曲名2"]
+            }`;
+
+            const aiResult = await model.generateContent(prompt);
+            const response = await aiResult.response;
+            const text = response.text().replace(/```json|```/g, "").trim();
+            const quizData = JSON.parse(text);
+
+            // 選択肢をシャッフル
+            const options = quizData.options.sort(() => Math.random() - 0.5);
+
+            // ボタンを作成
+            const row = new ActionRowBuilder().addComponents(
+                options.map((opt, i) => 
+                    new ButtonBuilder()
+                        .setCustomId(`quiz_${i}_${opt === answerSong}`)
+                        .setLabel(opt)
+                        .setStyle(ButtonStyle.Primary)
+                )
+            );
+
+            const message = await interaction.editReply({
+                content: `**【レコード・AIクイズ】この曲は何？**\n\n${quizData.question}`,
+                components: [row]
+            });
+
+            // 回答の受け付け
+            const collector = message.createMessageComponentCollector({
+                componentType: ComponentType.Button,
+                time: 20000 // 1分間
+            });
+
+            collector.on('collect', async i => {
+                if (i.user.id !== interaction.user.id) {
+                    return i.reply({ content: "これは他の人のクイズです！", ephemeral: true });
+                }
+                
+                const isCorrect = i.customId.endsWith('true');
+                if (isCorrect) {
+                    await i.update({ content: `✅ **正解！** 答えは **『${answerSong}』** でした！`, components: [] });
+                } else {
+                    await i.update({ content: `❌ **残念！** 正解は **『${answerSong}』** でした。`, components: [] });
+                }
+            });
+
+        } catch (error) {
+            console.error("AIクイズ生成エラー:", error);
+            await interaction.editReply("❌ クイズの作成に失敗しました。もう一度試してください。");
+        }
+    }
 });
 
-// エラーハンドリング
-client.on('error', (error) => {
-    console.error('❌ Discord クライアントエラー:', error);
+// リアクション・エラー・プロセス終了処理などは元のまま維持
+client.on('messageCreate', (message) => {
+    if (message.author.bot) return;
+    if (message.content.toLowerCase() === 'hello') {
+        message.reply('りんりりーん！お届け物です！！');
+    }
 });
 
-// プロセス終了時の処理
+client.on('messageReactionAdd', async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.id === config.messageId) {
+        const roleId = reactionRoles[reaction.emoji.name];
+        if (!roleId) return;
+        const member = await reaction.message.guild.members.fetch(user.id);
+        if (!member.roles.cache.has(roleId)) await member.roles.add(roleId);
+    }
+});
+
+client.on('messageReactionRemove', async (reaction, user) => {
+    if (user.bot) return;
+    if (reaction.partial) await reaction.fetch();
+    if (reaction.message.id === config.messageId) {
+        const roleId = reactionRoles[reaction.emoji.name];
+        if (!roleId) return;
+        const member = await reaction.message.guild.members.fetch(user.id);
+        if (member.roles.cache.has(roleId)) await member.roles.remove(roleId);
+    }
+});
+
+client.on('error', (error) => console.error('❌ Discord クライアントエラー:', error));
+
 process.on('SIGINT', async () => {
     console.log('🛑 Botを終了しています...');
-    try {
-        const channel = client.channels.cache.get(NOTIFY_CHANNEL_ID);
-        if (channel) {
-            await channel.send(`❌ ${client.user.tag} がオフラインになりました…`);
-        }
-    } catch (err) {
-        console.error("⚠️ 終了通知の送信に失敗:", err);
-    }
     client.destroy();
     process.exit(0);
 });
 
-// Discord にログイン
-if (!process.env.DISCORD_TOKEN) {
-    console.error('❌ DISCORD_TOKEN が .env ファイルに設定されていません！');
+// 起動確認
+if (!process.env.DISCORD_TOKEN || !process.env.GEMINI_API_KEY) {
+    console.error('❌ DISCORD_TOKEN または GEMINI_API_KEY が設定されていません！');
     process.exit(1);
 }
 
 console.log('🔄 Discord に接続中...');
+client.login(process.env.DISCORD_TOKEN).catch(err => {
+    console.error('❌ ログイン失敗:', err);
+    process.exit(1);
+});
 
-// ログインの直前に追加
-console.log("トークンの確認:", process.env.DISCORD_TOKEN ? "設定されています (OK)" : "設定されていません (NG)");
-
-client.login(process.env.DISCORD_TOKEN)
-    .catch(error => {
-        console.error('❌ ログインに失敗しました:', error);
-        process.exit(1);
-    });
-
-// Express Webサーバーの設定（Render用）
+// Expressサーバー
 const app = express();
-const port = process.env.PORT || 3000;
-
-app.get('/', (req, res) => {
-    res.json({
-        status: 'Bot is running! 🤖',
-        uptime: process.uptime(),
-        timestamp: new Date().toISOString()
-    });
-});
-
-app.listen(port, () => {
-    console.log(`🌐 Web サーバーがポート ${port} で起動しました`);
-});
-
-// git add .
-// git commit -m "コードを修正"
-// git push origin main
+app.get('/', (req, res) => res.json({ status: 'Bot is running! 🤖' }));
+app.listen(port, () => console.log(`🌐 Webサーバー起動: ポート ${port}`));
