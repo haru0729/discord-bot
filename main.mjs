@@ -267,5 +267,6 @@ client.login(process.env.DISCORD_TOKEN).catch(err => {
 
 // Expressサーバー
 const app = express();
+const port = process.env.PORT || 10000; // ★この1行を追加しました
 app.get('/', (req, res) => res.json({ status: 'Bot is running! 🤖' }));
 app.listen(port, () => console.log(`🌐 Webサーバー起動: ポート ${port}`));
