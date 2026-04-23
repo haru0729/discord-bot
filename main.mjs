@@ -15,7 +15,7 @@ dotenv.config();
 
 // Gemini APIの設定
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-3.1-pro" });
 
 // Discord Botクライアントを作成
 const client = new Client({
