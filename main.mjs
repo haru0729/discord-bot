@@ -120,7 +120,14 @@ client.on("interactionCreate", async (interaction) => {
 
     // --- ガチャ引く機能(record) ---
     if (interaction.commandName === "gacha" && subcommand === "record") {
-        await interaction.deferReply();
+        // ★レコードガチャ用のタイムアウト対策
+        try {
+            await interaction.deferReply();
+        } catch (error) {
+            console.warn("⚠️ レコードガチャ: 応答に3秒以上かかりました。Botのクラッシュを防ぎます。");
+            return; // 処理を終了
+        }
+
         let count = interaction.options.getInteger("count") || 1;
         if (count > 100) count = 100;
         let trashRate = interaction.options.getInteger("rate") ?? 50;
@@ -145,18 +152,20 @@ client.on("interactionCreate", async (interaction) => {
 
     // --- AIクイズ機能(quiz) ---
     if (interaction.commandName === "gacha" && subcommand === "quiz") {
+        // ★クイズ用のタイムアウト対策（ここが最も重要です！）
         try {
             await interaction.deferReply();
         } catch (error) {
-            console.error("⚠️ Renderの復帰遅延により、応答に3秒以上かかりました。");
-            return; // ！！エラー時はここで処理を止める！！
+            console.warn("⚠️ クイズ生成: 応答に3秒以上かかりました。Botのクラッシュを防ぎます。");
+            return; // 処理を終了
         }
+
         // 答えとなる曲をランダムに選ぶ
         const answerItem = recordTable[Math.floor(Math.random() * recordTable.length)];
         const answerSong = answerItem.label;
 
         try {
-            // AIへの依頼（プロンプト）をより具体的に！
+            // AIへの依頼（プロンプト）
             const prompt = `
             あなたは「プロジェクトセカイ(プロセカ)」とボカロ楽曲の専門家です。
             楽曲「${answerSong}」が正解となるような3択クイズを1問作成してください。
@@ -171,6 +180,8 @@ client.on("interactionCreate", async (interaction) => {
               "question": "クイズの本文（事実に基づいた正確な情報のみ）",
               "options": ["${answerSong}", "ダミーの実在する曲1", "ダミーの実在する曲2"]
             }`;
+
+            // AIは無料枠で一番安定している 1.5-flash を使用します
             const aiResult = await model.generateContent(prompt);
             const response = await aiResult.response;
             const text = response.text().replace(/```json|```/g, "").trim();
@@ -179,7 +190,6 @@ client.on("interactionCreate", async (interaction) => {
             // 選択肢をシャッフル
             const options = quizData.options.sort(() => Math.random() - 0.5);
 
-            // ボタンを作成
             const row = new ActionRowBuilder().addComponents(
                 options.map((opt, i) => 
                     new ButtonBuilder()
@@ -197,7 +207,7 @@ client.on("interactionCreate", async (interaction) => {
             // 回答の受け付け
             const collector = message.createMessageComponentCollector({
                 componentType: ComponentType.Button,
-                time: 20000 // 1分間
+                time: 60000
             });
 
             collector.on('collect', async i => {
@@ -215,10 +225,15 @@ client.on("interactionCreate", async (interaction) => {
 
         } catch (error) {
             console.error("AIクイズ生成エラー:", error);
-            await interaction.editReply("❌ クイズの作成に失敗しました。もう一度試してください。");
+            if (error.status === 503) {
+                await interaction.editReply("⏳ 現在AIのサーバーが大変混み合っており、クイズを作れませんでした。数分待ってからもう一度お試しください！");
+            } else {
+                await interaction.editReply("❌ AIがクイズの作成に失敗しました。もう一度試してください。");
+            }
         }
     }
 });
+
 
 // リアクション・エラー・プロセス終了処理などは元のまま維持
 client.on('messageCreate', (message) => {
