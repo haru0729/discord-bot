@@ -145,8 +145,12 @@ client.on("interactionCreate", async (interaction) => {
 
     // --- AIクイズ機能(quiz) ---
     if (interaction.commandName === "gacha" && subcommand === "quiz") {
-        await interaction.deferReply();
-
+        try {
+            await interaction.deferReply();
+        } catch (error) {
+            console.error("⚠️ Renderの復帰遅延により、応答に3秒以上かかりました。");
+            return; // ！！エラー時はここで処理を止める！！
+        }
         // 答えとなる曲をランダムに選ぶ
         const answerItem = recordTable[Math.floor(Math.random() * recordTable.length)];
         const answerSong = answerItem.label;
