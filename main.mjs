@@ -152,21 +152,20 @@ client.on("interactionCreate", async (interaction) => {
         const answerSong = answerItem.label;
 
         try {
-            // AIへの依頼（プロンプト）
+            // AIへの依頼（プロンプト）をより具体的に！
             const prompt = `
-            あなたは「プロジェクトセカイ(プロセカ)」とボカロ楽曲の専門家です。
-            楽曲「${answerSong}」が正解となるようなクイズを作成してください。
+            あなたは「プロジェクトセカイ(プロセカ)」とボカロ文化を愛する、知識豊富なクイズ作成のプロです。
+            楽曲「${answerSong}」が正解となるような、ファンが唸る面白い3択クイズを1問作成してください。
             
-            【ルール】
-            1. クイズ本文に直接「${answerSong}」という曲名を書かないでください。
-            2. 特徴（歌詞、ボカロP、ユニット、イベント内容など）から推測させてください。
-            3. 以下のJSON形式だけで出力してください。
+            【厳守するルール】
+            1. クイズ本文に直接「${answerSong}」という曲名や、すぐに分かる単語を書かないでください。
+            2. 「印象的な歌詞の一部」「作曲したボカロPの過去の代表作」「ゲーム内の3D/2D演出」「イベントのストーリー内容」など、少しマニアックで面白い特徴をヒントにしてください。
+            3. ダミーの選択肢（別の実在する曲名）は、正解と雰囲気が似ている曲や、同じボカロPの曲にして、少し迷うようにしてください。
+            4. 以下のJSON形式だけで出力してください。他の文章は一切不要です。
             {
-              "question": "クイズの本文（曲名を出さない）",
-              "options": ["${answerSong}", "別の実在する曲名1", "別の実在する曲名2"]
-            }`;
-
-            const aiResult = await model.generateContent(prompt);
+              "question": "クイズの本文（少し長めで詳しい説明にする）",
+              "options": ["${answerSong}", "ダミーの実在する曲1", "ダミーの実在する曲2"]
+            }`;           const aiResult = await model.generateContent(prompt);
             const response = await aiResult.response;
             const text = response.text().replace(/```json|```/g, "").trim();
             const quizData = JSON.parse(text);
