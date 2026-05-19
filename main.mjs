@@ -244,9 +244,9 @@ client.on('messageCreate', (message) => {
     if (message.content.toLowerCase().startsWith('debug ')) {
         const args = message.content.split(' ');
         const targetNumber = parseInt(args[1], 10);
-        const result = recordTable[targetNumber];
+        const result = recordTable.find(record => parseInt(record.id, 10) === targetNumber);
         if (result && result.label) {
-            message.reply(`🛠️ **デバッグ結果**\n番号 **${targetNumber}** のレコードは **『${result.label}』** です。`);
+            message.reply(`🛠️ **デバッグ結果**\n番号 **${result.id}** のレコードは **『${result.label}』** です。`);
         } else {
             message.reply(`❌ 番号 ${targetNumber} のデータが正しく読み込めませんでした。`);
         }
