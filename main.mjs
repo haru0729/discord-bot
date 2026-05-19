@@ -241,7 +241,18 @@ client.on('messageCreate', (message) => {
     if (message.content.toLowerCase() === 'hello') {
         message.reply('りんりりーん！お届け物です！！');
     }
+    if (message.content.toLowerCase().startsWith('debug ')) {
+        const args = message.content.split(' ');
+        const targetNumber = parseInt(args[1], 10);
+        const result = recordTable[targetNumber];
+        if (result && result.label) {
+            message.reply(`🛠️ **デバッグ結果**\n番号 **${targetNumber}** のレコードは **『${result.label}』** です。`);
+        } else {
+            message.reply(`❌ 番号 ${targetNumber} のデータが正しく読み込めませんでした。`);
+        }
+    }
 });
+
 
 client.on('messageReactionAdd', async (reaction, user) => {
     if (user.bot) return;

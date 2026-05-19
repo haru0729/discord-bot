@@ -2625,5 +2625,37 @@ export const recordTable = [
   {
     id: "659",
     label: "CRASH THE PARTY"
+  },
+  {
+    id: "660",
+    label: "Who?"
+  },
+  {
+    id: "661",
+    label: "導火愛"
+  },
+  {
+    id: "662",
+    label: "世界の歩き方"
+  },
+  {
+    id: "663",
+    label: "魔法少女幸福論"
+  },
+  {
+    id: "664",
+    label: "星に一番近い場所"
+  },
+  {
+    id: "665",
+    label: "羽歌"
+  },
+  {
+    id: "666",
+    label: "卑怯戦隊うろたんだー"
+  },
+  {
+    id: "667",
+    label: "あなたしか見えないの"
   }
 ]
